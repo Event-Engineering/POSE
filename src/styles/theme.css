@@ -1,0 +1,260 @@
+/* Event Engineering theme (led.event.engineering red palette). */
+
+@font-face {
+	font-family: 'Oxanium';
+	src: url('/fonts/oxanium.woff2') format('woff2');
+	font-weight: 400 700;
+	font-display: swap;
+}
+
+:root {
+	--bg: #f2f3f5;
+	--panel: #ffffff;
+	--panel-2: #ddcacb;
+	--text: #303133;
+	--muted: #909399;
+	--border: #dcdfe6;
+	--accent: #E01F27;
+	--accent-hover: #df454b;
+	--danger: #f56c6c;
+	--warn: #e6a23c;
+	--ok: #67c23a;
+	--font: 'Oxanium', sans-serif;
+	--radius: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #0a0a0a;
+		--panel: #141414;
+		--panel-2: #1d1e1f;
+		--text: #ffffff;
+		--muted: #909399;
+		--border: #4C4D4F;
+		--accent: #E01F27;
+		--accent-hover: #bd2329;
+		--danger: #f56c6c;
+		--warn: #e6a23c;
+		--ok: #67c23a;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html, body, #app {
+	height: 100%;
+	width: 100%;
+	margin: 0;
+}
+
+body {
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	font-size: 14px;
+}
+
+#app {
+	height: 100%;
+	width: 100%;
+}
+
+h1, h2, h3, h4 {
+	font-family: var(--font);
+	font-weight: 700;
+	margin: 0;
+}
+
+a {
+	color: var(--accent);
+}
+
+button, input, select, textarea {
+	font-family: var(--font);
+	color: var(--text);
+}
+
+/* Buttons */
+button {
+	background: var(--panel-2);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	color: var(--text);
+	padding: 0.4em 0.75em;
+	font-size: 0.85em;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover {
+	border-color: var(--accent);
+}
+
+button:active {
+	background: var(--accent);
+	color: #fff;
+}
+
+button.primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+}
+
+button.primary:hover {
+	background: var(--accent-hover);
+	border-color: var(--accent-hover);
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Button groups (segmented controls) */
+.btn-group {
+	display: inline-flex;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+}
+
+.btn-group button {
+	border: none;
+	border-radius: 0;
+	border-right: 1px solid var(--border);
+	background: var(--panel-2);
+}
+
+.btn-group button:last-child {
+	border-right: none;
+}
+
+.btn-group button.active {
+	background: var(--accent);
+	color: #fff;
+}
+
+/* Inputs / selects */
+input[type='text'],
+input[type='number'],
+select {
+	background: var(--panel-2);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 0.35em 0.5em;
+	font-size: 0.85em;
+}
+
+input[type='text']:focus,
+input[type='number']:focus,
+select:focus,
+input[type='range']:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+input[type='color'] {
+	width: 2.2em;
+	height: 1.8em;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: none;
+	cursor: pointer;
+}
+
+input[type='checkbox'] {
+	accent-color: var(--accent);
+	width: 1em;
+	height: 1em;
+}
+
+/* Range sliders */
+input[type='range'] {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 4px;
+	background: var(--border);
+	border-radius: 2px;
+}
+
+input[type='range']::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--accent);
+	cursor: pointer;
+	border: none;
+}
+
+input[type='range']::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--accent);
+	cursor: pointer;
+	border: none;
+}
+
+/* Accordion */
+.accordion-section {
+	border-bottom: 1px solid var(--border);
+}
+
+.accordion-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	background: none;
+	border: none;
+	border-radius: 0;
+	padding: 1.1em 0.25em;
+	font-weight: 700;
+	font-size: 0.95em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	cursor: pointer;
+	color: var(--text);
+}
+
+.accordion-header:hover {
+	color: var(--accent);
+	border-color: transparent;
+}
+
+.accordion-header .chevron {
+	transition: transform 0.15s ease;
+	color: var(--accent);
+}
+
+.accordion-header.open .chevron {
+	transform: rotate(180deg);
+}
+
+.accordion-body {
+	display: flex;
+	flex-direction: column;
+	gap: 1.1em;
+	padding: 0 0.25em 1.3em;
+}
+
+/* Status colours, used by Readouts */
+.status-ok { color: var(--ok); }
+.status-warn { color: var(--warn); }
+.status-bad { color: var(--danger); }
+
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 4px;
+}
