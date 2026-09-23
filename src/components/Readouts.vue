@@ -80,24 +80,20 @@ const summary = computed(() => {
 				<span class="drawer-title">Readouts</span>
 				<span v-if="!isOpen" class="drawer-summary" :class="'status-' + summary.status">{{ summary.text }}</span>
 			</button>
-			<div class="btn-group units-toggle" role="group" aria-label="Units">
-				<button type="button" :class="{ active: state.units === 'mm' }" @click="state.units = 'mm'">mm</button>
-				<button type="button" :class="{ active: state.units === 'ftin' }" @click="state.units = 'ftin'">ft&#8211;in</button>
-			</div>
 			<button type="button" class="drawer-arrow" :aria-label="isOpen ? 'Hide readouts' : 'Show readouts'" @click="toggle">
 				{{ isOpen ? '▼' : '▲' }}
 			</button>
 		</div>
 		<div v-show="isOpen" class="drawer-body">
 			<div class="rcard" :class="{ hot: highlight === 'spill' }" @mouseenter="highlight = 'spill'" @mouseleave="highlight = null">
-				<div class="rcard-title">Backdrop spill (sensor)</div>
+				<div class="rcard-title">Scene spill (sensor)</div>
 				<div class="rline"><span>Top</span><span :class="cls(readouts.sensor.spill.top)">{{ fmt(readouts.sensor.spill.top) }}</span></div>
 				<div class="rline"><span>Left</span><span :class="cls(readouts.sensor.spill.left)">{{ fmt(readouts.sensor.spill.left) }}</span></div>
 				<div class="rline"><span>Right</span><span :class="cls(readouts.sensor.spill.right)">{{ fmt(readouts.sensor.spill.right) }}</span></div>
 			</div>
 
 			<div class="rcard" v-if="readouts.crop" :class="{ hot: highlight === 'cropSpill' }" @mouseenter="highlight = 'cropSpill'" @mouseleave="highlight = null">
-				<div class="rcard-title">Backdrop spill (crop)</div>
+				<div class="rcard-title">Scene spill (crop)</div>
 				<div class="rline"><span>Top</span><span :class="cls(readouts.crop.spill.top)">{{ fmt(readouts.crop.spill.top) }}</span></div>
 				<div class="rline"><span>Left</span><span :class="cls(readouts.crop.spill.left)">{{ fmt(readouts.crop.spill.left) }}</span></div>
 				<div class="rline"><span>Right</span><span :class="cls(readouts.crop.spill.right)">{{ fmt(readouts.crop.spill.right) }}</span></div>
@@ -166,11 +162,6 @@ const summary = computed(() => {
 	align-items: center;
 	gap: 0.5em;
 	padding-right: 0.5em;
-}
-
-.units-toggle button {
-	font-size: 0.75em;
-	padding: 0.25em 0.6em;
 }
 
 .drawer-handle {

@@ -36,10 +36,11 @@ function computeSpillAndFloor(s, tanH, tanV) {
 	const vTop = tanV
 	const vBottom = -tanV
 
-	const wallAt = (v) => {
+	// Where a frame-edge ray at vertical tangent v crosses the plane z = zp (the back wall is zp = 0).
+	const planeAt = (v, zp) => {
 		const dz = dirz(v)
 		if (dz >= 0) return null
-		const t = -s.cz / dz
+		const t = (zp - s.cz) / dz
 		if (t <= 0) return null
 		const y = s.ch + t * diry(v)
 		return { t, y, halfWidth: t * tanH }
@@ -54,25 +55,48 @@ function computeSpillAndFloor(s, tanH, tanV) {
 		return { t, z }
 	}
 
-	const top = wallAt(vTop)
-	const bottom = wallAt(vBottom)
+	// Side walls run from the back wall (z=0) forward to z = sd, full wall height, at x = ±bw/2.
+	// With them, a frame edge only sees past the set if it gets beyond their front edges, so side
+	// spill is measured at the plane z = sd (capped just short of the lens).
+	const walls = !!s.sw && s.sd > 0
+	const sideZ = walls ? Math.min(s.sd, s.cz - 0.01) : 0
 
-	const topMargin = top ? s.bh - top.y : -Infinity
-	// Side spill: frame half-width on the wall, taken at the widest visible wall height. Only the
-	// wall between the floor (y=0) and the frame top counts, so clamp before measuring. A wall point
-	// at height y sits at depth (ch - y)·sin(ct) + cz·cos(ct) along the optical axis.
+	// Side spill: frame half-width at the widest visible height on that plane. Only the span
+	// between the floor and the frame top (and within the wall height) counts. A point at height y
+	// on plane z sits at depth (ch - y)·sin(ct) + (cz - z)·cos(ct) along the optical axis.
 	const ctRad = rad(s.ct)
-	const depthAt = (y) => (s.ch - y) * Math.sin(ctRad) + s.cz * Math.cos(ctRad)
-	const lo = Math.max(0, bottom ? bottom.y : 0)
-	const hi = Math.min(s.bh, top ? top.y : s.bh)
+	const depthAt = (y) => (s.ch - y) * Math.sin(ctRad) + (s.cz - sideZ) * Math.cos(ctRad)
+	const sTop = planeAt(vTop, sideZ)
+	const sBottom = planeAt(vBottom, sideZ)
+	const lo = Math.max(0, sBottom ? sBottom.y : 0)
+	const hi = Math.min(s.bh, sTop ? sTop.y : s.bh)
 	const maxHalfWidth = hi > lo
 		? Math.max(depthAt(lo), depthAt(hi)) * tanH
-		: Math.max(top ? top.halfWidth : 0, bottom ? bottom.halfWidth : 0)
+		: Math.max(sTop ? sTop.halfWidth : 0, sBottom ? sBottom.halfWidth : 0)
 	const sideMargin = s.bw / 2 - maxHalfWidth
-	// Where each margin is measured on the wall, for drawing it (see lib/dimensions.js).
-	const sideAt = hi > lo ? (depthAt(lo) >= depthAt(hi) ? lo : hi) : Math.max(0, Math.min(s.bh, top ? top.y : 0))
-	const topAt = top ? top.y : null
+	// Where each margin is measured, for drawing it (see lib/dimensions.js).
+	const sideAt = hi > lo ? (depthAt(lo) >= depthAt(hi) ? lo : hi) : Math.max(0, Math.min(s.bh, sTop ? sTop.y : 0))
 
+	// Top spill: the frame's top edge against the back wall top, and, with side walls, against
+	// their top edges wherever the frame's top corners are over them. Tilted down, the top edge is
+	// higher nearer the lens, so it can clear the side walls while still inside the back wall.
+	const top = planeAt(vTop, 0)
+	let topMargin = top ? s.bh - top.y : -Infinity
+	let topAt = top ? top.y : null
+	let topZ = 0
+	let topX = 0
+	if (walls && top && top.halfWidth >= s.bw / 2) {
+		// Nearest plane at which the top corners still reach the side walls.
+		const tReach = s.bw / 2 / tanH
+		const zReach = Math.min(sideZ, s.cz + tReach * dirz(vTop))
+		const near = planeAt(vTop, Math.max(0, zReach))
+		if (near && s.bh - near.y < topMargin) {
+			topMargin = s.bh - near.y
+			topAt = near.y
+			topZ = Math.max(0, zReach)
+			topX = s.bw / 2
+		}
+	}
 	const bottomFloor = floorAt(vBottom)
 	const topFloor = floorAt(vTop)
 
@@ -83,7 +107,7 @@ function computeSpillAndFloor(s, tanH, tanV) {
 	const widthAtReach = bottomFloor ? bottomFloor.t * tanH * 2 : null
 
 	return {
-		spill: { top: topMargin, left: sideMargin, right: sideMargin, sideAt, topAt, halfWidth: maxHalfWidth },
+		spill: { top: topMargin, left: sideMargin, right: sideMargin, sideAt, sideZ, topAt, topZ, topX, halfWidth: maxHalfWidth },
 		floor: {
 			hitsFloor,
 			nearestZ,

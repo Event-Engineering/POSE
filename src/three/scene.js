@@ -48,7 +48,7 @@ export class PoseScene {
 		this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true })
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
 		this.renderer.shadowMap.enabled = true
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+		this.renderer.shadowMap.type = THREE.PCFShadowMap
 
 		this.scene = new THREE.Scene()
 		this.scene.background = new THREE.Color(INFINITY_GREY)
@@ -177,6 +177,21 @@ export class PoseScene {
 		backdrop.castShadow = true
 		backdrop.name = 'backdrop'
 		this.setGroup.add(backdrop)
+
+		// Side walls: same height and colour, just outside x = ±bw/2, from behind the back wall
+		// (closing the corner) forward to z = sd.
+		if (state.sw && state.sd > 0) {
+			const T = 0.03
+			const geo = new THREE.BoxGeometry(T, state.bh, state.sd + T)
+			for (const side of [-1, 1]) {
+				const wall = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: state.bc, roughness: 0.95 }))
+				wall.position.set(side * (state.bw / 2 + T / 2), state.bh / 2, (state.sd - T) / 2)
+				wall.receiveShadow = true
+				wall.castShadow = true
+				wall.name = 'sideWall'
+				this.setGroup.add(wall)
+			}
+		}
 
 		// Floor graphic: fw x fd, from the wall (z=0) forward to z=fd.
 		const fw = floorWidth(state)
@@ -507,7 +522,7 @@ export class PoseScene {
 		if (!this.auxRenderer) {
 			this.auxRenderer = new THREE.WebGLRenderer({ antialias: true })
 			this.auxRenderer.shadowMap.enabled = true
-			this.auxRenderer.shadowMap.type = THREE.PCFSoftShadowMap
+			this.auxRenderer.shadowMap.type = THREE.PCFShadowMap
 		}
 		this.auxRenderer.setPixelRatio(dpr)
 		this.auxRenderer.setSize(w, h, false)

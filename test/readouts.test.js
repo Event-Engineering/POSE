@@ -173,3 +173,36 @@ describe('renderFit', () => {
 		expect(same.frame.h).toBeCloseTo(0.85, 9)
 	})
 })
+
+describe('side walls', () => {
+	const base2 = (over) => ({ ...DEFAULTS_FOR_WALLS, ...over })
+	const DEFAULTS_FOR_WALLS = { bw: 2.4, bh: 2.4, fw: null, fd: 2, f: 21.635, ar: '16:9', or: 'land', ch: 1.6, ct: 0, cz: 2.4, pz: 0.5, os: 15, crop: 'none', sw: false, sd: 1.2 }
+	const run = (s) => computeReadouts(s, [])
+
+	it('measure side spill at the walls\' front edge, which improves it', () => {
+		const without = run(base2({}))
+		const withWalls = run(base2({ sw: true, sd: 1.2 }))
+		// Frame half-width at z = sd is (cz - sd)·tanH instead of cz·tanH at the back wall.
+		const tanH = Math.tan(Math.atan(43.27 / (2 * 21.635)) ) * (16 / 9) / Math.hypot(16 / 9, 1)
+		expect(without.sensor.spill.left).toBeCloseTo(1.2 - 2.4 * tanH, 2)
+		expect(withWalls.sensor.spill.left).toBeCloseTo(1.2 - 1.2 * tanH, 2)
+		expect(withWalls.sensor.spill.sideZ).toBeCloseTo(1.2, 9)
+	})
+
+	it('catches the frame top clearing the side walls when tilted down', () => {
+		// Tilted down past half the vertical FOV, the top edge falls towards the wall, so it is
+		// higher (worse) over the side walls than at the back wall.
+		const s = base2({ ct: 30, ch: 2.5, bh: 2.4, bw: 1.6, sw: true, sd: 1.5 })
+		const back = run({ ...s, sw: false }).sensor.spill.top
+		const walls = run(s).sensor.spill
+		expect(walls.top).toBeLessThan(back)
+		expect(walls.topZ).toBeGreaterThan(0)
+		expect(walls.topX).toBeCloseTo(0.8, 9)
+	})
+
+	it('changes nothing when off', () => {
+		const a = run(base2({ sw: false, sd: 3 }))
+		const b = run(base2({ sw: false, sd: 0.5 }))
+		expect(a.sensor.spill).toEqual(b.sensor.spill)
+	})
+})

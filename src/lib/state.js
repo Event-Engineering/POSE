@@ -2,11 +2,13 @@
 // Each key here is also its URL query parameter (see SPEC.md "Sidebar sections").
 import { reactive, watch } from 'vue'
 import { focalFromFov } from './lens.js'
-import { enabledPoses } from './poses.js'
+import { enabledPoses, YMCA } from './poses.js'
 
 export const DEFAULTS = {
 	// Backdrop
 	bw: 2.4, bh: 2.4, bc: '#a8c8e8',
+	// Side walls: on/off and how far forward from the back wall they run (same height and colour).
+	sw: false, sd: 1.2,
 	// Crowd
 	n: 3, hm: 'avg', hmin: 1.55, hmax: 1.98, gap: 0.1, pz: 0.5, mc: '#ffffff', seed: 1,
 	// Enabled poses, comma-separated ids from lib/poses.js; each person gets one at random by seed.
@@ -32,7 +34,7 @@ export const ENUMS = {
 }
 
 export const RANGES = {
-	bw: [1, 8], bh: [1, 4], n: [1, 10], hmin: [1, 2.1], hmax: [1, 2.1], gap: [-0.05, 0.6],
+	bw: [1, 8], bh: [1, 4], sd: [0.2, 4], n: [1, 10], hmin: [1, 2.1], hmax: [1, 2.1], gap: [-0.05, 0.6],
 	pz: [0.2, 3], fw: [0.5, 10], fd: [0.2, 6], f: [5, 300], ch: [0.6, 2.5], ct: [-10, 30],
 	cz: [0.5, 8], os: [0, 40],
 }
@@ -49,7 +51,8 @@ function parse(key, raw) {
 	// 'plan' was the top view's old name; keep old links working.
 	if (key === 'view' && raw === 'plan') return 'top'
 	if (ENUMS[key]) return ENUMS[key].includes(raw) ? raw : undefined
-	if (key === 'po') return enabledPoses(raw).join(',')
+	if (key === 'sw') return raw === '1'
+	if (key === 'po') return raw === YMCA ? YMCA : enabledPoses(raw).join(',')
 	if (key === 'bc' || key === 'fc' || key === 'mc') return /^[0-9a-f]{6}$/i.test(raw) ? '#' + raw : undefined
 	const v = Number(raw)
 	if (!Number.isFinite(v)) return undefined

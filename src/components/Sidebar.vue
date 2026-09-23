@@ -7,7 +7,8 @@ import LengthField from './controls/LengthField.vue'
 import NumberSlider from './controls/NumberSlider.vue'
 import RangeSlider2 from './controls/RangeSlider2.vue'
 import SegButtons from './controls/SegButtons.vue'
-import { POSE_META, enabledPoses } from '../lib/poses.js'
+import ToggleSwitch from './controls/ToggleSwitch.vue'
+import { POSE_META, enabledPoses, YMCA } from '../lib/poses.js'
 
 const arOptions = [
 	{ value: '3:2', label: '3:2' },
@@ -49,12 +50,13 @@ const currentFov = computed({
 	set: (v) => { state.f = focalFromFov(v, state.fovt, state.ar, state.or) },
 })
 
-const poses = computed(() => enabledPoses(state.po))
+// No chip is lit in YMCA mode; picking one leaves it.
+const poses = computed(() => (state.po === YMCA ? [] : enabledPoses(state.po)))
 
 // Toggle a pose in the pool; the last enabled pose can't be switched off.
 function togglePose(id) {
 	const on = poses.value.includes(id)
-	if (on && poses.value.length === 1) return
+	if (on && poses.value.length <= 1) return
 	const next = on ? poses.value.filter((p) => p !== id) : [...poses.value, id]
 	state.po = POSE_META.map((p) => p.id).filter((p) => next.includes(p)).join(',')
 }
@@ -66,12 +68,26 @@ function reseed() {
 
 <template>
 	<div class="sidebar-sections">
-		<Accordion title="Backdrop">
-			<LengthField v-model="state.bw" label="Width" :min="RANGES.bw[0]" :max="RANGES.bw[1]" />
-			<LengthField v-model="state.bh" label="Height" :min="RANGES.bh[0]" :max="RANGES.bh[1]" />
+		<Accordion title="Scene">
+			<LengthField v-model="state.bw" label="Back wall width" :min="RANGES.bw[0]" :max="RANGES.bw[1]" />
+			<LengthField v-model="state.bh" label="Wall height" :min="RANGES.bh[0]" :max="RANGES.bh[1]" />
+			<ToggleSwitch v-model="state.sw" label="Side walls" />
+			<LengthField v-if="state.sw" v-model="state.sd" label="Side wall depth" :min="RANGES.sd[0]" :max="RANGES.sd[1]" />
+			<div class="field-row">
+				<label class="slider-label">Wall colour</label>
+				<input type="color" v-model="state.bc" />
+			</div>
+
+			<div class="subhead">Floor graphic</div>
+			<ToggleSwitch v-model="followFloorWidth" label="Match back wall width" />
+			<LengthField
+				v-if="!followFloorWidth"
+				v-model="effectiveFloorWidth" label="Width" :min="0.5" :max="10"
+			/>
+			<LengthField v-model="state.fd" label="Depth" :min="RANGES.fd[0]" :max="RANGES.fd[1]" />
 			<div class="field-row">
 				<label class="slider-label">Colour</label>
-				<input type="color" v-model="state.bc" />
+				<input type="color" v-model="state.fc" />
 			</div>
 		</Accordion>
 
@@ -94,7 +110,7 @@ function reseed() {
 				v-model="state.gap" label="Grouping" :min="RANGES.gap[0]" :max="RANGES.gap[1]"
 				:end-labels="['Social', 'Corporate']"
 			/>
-			<LengthField v-model="state.pz" label="Distance from backdrop" :min="RANGES.pz[0]" :max="RANGES.pz[1]" />
+			<LengthField v-model="state.pz" label="Distance from back wall" :min="RANGES.pz[0]" :max="RANGES.pz[1]" />
 			<div class="field-row">
 				<label class="slider-label">Mannequin colour</label>
 				<input type="color" v-model="state.mc" />
@@ -112,22 +128,6 @@ function reseed() {
 						@click="togglePose(p.id)"
 					>{{ p.label }}</button>
 				</div>
-			</div>
-		</Accordion>
-
-		<Accordion title="Floor graphic">
-			<label class="check-label">
-				<input type="checkbox" v-model="followFloorWidth" />
-				Match backdrop width
-			</label>
-			<LengthField
-				v-if="!followFloorWidth"
-				v-model="effectiveFloorWidth" label="Width" :min="0.5" :max="10"
-			/>
-			<LengthField v-model="state.fd" label="Depth" :min="RANGES.fd[0]" :max="RANGES.fd[1]" />
-			<div class="field-row">
-				<label class="slider-label">Colour</label>
-				<input type="color" v-model="state.fc" />
 			</div>
 		</Accordion>
 
@@ -150,7 +150,7 @@ function reseed() {
 			</div>
 			<LengthField v-model="state.ch" label="Height from floor" :min="RANGES.ch[0]" :max="RANGES.ch[1]" />
 			<NumberSlider v-model="state.ct" label="Tilt" :min="RANGES.ct[0]" :max="RANGES.ct[1]" :step="0.5" precision="1" suffix="&deg;" />
-			<LengthField v-model="state.cz" label="Distance from backdrop" :min="RANGES.cz[0]" :max="RANGES.cz[1]" />
+			<LengthField v-model="state.cz" label="Distance from back wall" :min="RANGES.cz[0]" :max="RANGES.cz[1]" />
 			<div class="field-row">
 				<label class="slider-label">Post-crop</label>
 				<select v-model="state.crop">
@@ -165,6 +165,17 @@ function reseed() {
 </template>
 
 <style scoped>
+.subhead {
+	margin-top: 0.6em;
+	padding-top: 1em;
+	border-top: 1px solid var(--border);
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
 .field-col {
 	display: flex;
 	flex-direction: column;

@@ -28,10 +28,12 @@ A full-height left sidebar with accordion sections. To its right, a top bar (tit
 
 URL keys in brackets. Defaults shown.
 
-### Backdrop
-- Width [bw] 2.4 m, range 1–8 m.
-- Height [bh] 2.4 m, range 1–4 m.
-- Colour [bc] light blue.
+### Scene
+- Back wall width [bw] 2.4 m, range 1–8 m.
+- Wall height [bh] 2.4 m, range 1–4 m (back wall and side walls).
+- Side walls [sw] off by default; side wall depth [sd] 1.2 m, range 0.2–4 m, measured forward from the back wall. Side walls sit at x = ±bw/2 and share the wall colour.
+- Wall colour [bc] light blue.
+- Floor graphic (sub-section): width [fw] defaults to the back wall width, depth [fd] 2.0 m forward from the back wall, colour [fc] light blue.
 - Roadmap: upload a texture image.
 
 ### Crowd
@@ -43,12 +45,6 @@ URL keys in brackets. Defaults shown.
 - Mannequin colour [mc] default white. Never skin tones.
 - Reseed button [seed].
 - Poses [po]: which poses are in the pool (comma-separated ids; default `stand`). Each person gets one from the pool at random by seed. Pool: Standing, T-pose, Arms up, Wave, Hands on hips, Arm around shoulder. The pose stream is separate from the height stream, so changing the pool never changes heights or order.
-
-### Floor graphic
-- Width [fw] defaults to backdrop width.
-- Depth [fd] 2.0 m, measured forward from the backdrop.
-- Colour [fc] light blue.
-- Roadmap: texture upload.
 
 ### Camera
 - Lens, entered as either focal length in mm (35 mm full-frame equivalent) [f] or field of view in degrees [fov]. Editing one updates the other. Default 90° FOV (AnkerWork C200), which works out at about 21.6 mm equivalent.
@@ -68,6 +64,10 @@ URL keys in brackets. Defaults shown.
 3. Shuffle left-to-right order using the same seed, so the extremes can land at the edges or the centre. Reseed rerolls both heights and order.
 4. One row only for v1. Centre the row on x = 0. Centre-to-centre spacing between neighbours = half of each person's shoulder width + gap, where shoulder width scales with height (about 0.26 × height).
 5. Mannequins are the Quaternius Universal Animation Library mannequin (CC0), frozen in their assigned pose and uniformly scaled to each person's height. Real meshes, not billboards; real depth matters for occlusion.
+
+### Easter egg
+
+Double-clicking the POSE title sets four people 200 mm apart doing the YMCA (Y, M, C, A left to right; `po=ymca`), and the title and browser tab read "YMCA". Double-click again, or pick any pose chip, to go back.
 
 ## Lens maths
 
@@ -99,7 +99,7 @@ Switch between views (Camera, Top, Side, Orbit) with a button group floating ove
 
 Computed analytically from the frustum and the set, not from pixels. Hovering a readout card draws its measurements as dimension lines over the main view, in whichever view is showing, coloured by status:
 
-- Backdrop spill warning: whether any edge of the frame sees past the top, left or right of the backdrop, with the margin remaining in mm per edge. Amber when the margin is under 100 mm, red when negative. When a crop is set, report the sensor frame and the crop separately, since guests may see the uncropped live feed on the booth screen.
+- Scene spill warning: whether any edge of the frame sees past the top, left or right of the set, with the margin remaining in mm per edge. With side walls on, side spill is measured at the walls' front edges, and top spill also checks the side walls' top edges (tilted down, the frame's top edge is higher nearer the lens). Amber when the margin is under 100 mm, red when negative. When a crop is set, report the sensor frame and the crop separately, since guests may see the uncropped live feed on the booth screen.
 - Floor visibility: whether the bottom of the frame hits the floor, how far forward from the wall the visible floor reaches, and whether it extends beyond the floor graphic.
 - Coverage at the people plane: frame width and height at the people's distance.
 - Headroom above the highest point of any posed figure (head, or hands for arms up) and clearance either side of the outermost people.

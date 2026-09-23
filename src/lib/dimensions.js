@@ -11,12 +11,18 @@ const measure = (a, b, value) => ({ a, b, value, status: null })
 /** Spill margins on the wall plane: frame edge to backdrop edge. */
 function spillDims(s, spill) {
 	const dims = []
-	if (spill.topAt != null) dims.push(margin([0, s.bh, 0], [0, spill.topAt, 0], spill.top))
+	if (spill.topAt != null) {
+		const x = spill.topX ?? 0
+		const z = spill.topZ ?? 0
+		dims.push(margin([x, s.bh, z], [x, spill.topAt, z], spill.top))
+	}
+	// On the back wall, or at the side walls' front edges when they're on.
 	const y = spill.sideAt
+	const z = spill.sideZ ?? 0
 	const edge = s.bw / 2
 	const frame = spill.halfWidth
-	dims.push(margin([-edge, y, 0], [-frame, y, 0], spill.left))
-	dims.push(margin([edge, y, 0], [frame, y, 0], spill.right))
+	dims.push(margin([-edge, y, z], [-frame, y, z], spill.left))
+	dims.push(margin([edge, y, z], [frame, y, z], spill.right))
 	return dims
 }
 
