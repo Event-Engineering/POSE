@@ -15,6 +15,7 @@ import { state } from '../lib/state.js'
 import { generateCrowd } from '../lib/crowd.js'
 import { aspect, overscanScale, cropFraction } from '../lib/lens.js'
 import { PoseScene } from '../three/scene.js'
+import { auxViews } from './aux-views.js'
 
 // View switching, snap-to-camera and export controls live in the app header (App.vue); this
 // component exposes the handlers that need the internal scene/overlay instances.
@@ -53,6 +54,7 @@ function renderFrame() {
 	scene.update(state, crowd.value)
 	scene.render()
 	drawOverlay()
+	for (const [view, canvas] of auxViews.targets) scene.renderAux(view, canvas)
 }
 
 function drawOverlay() {
@@ -165,6 +167,7 @@ watch(state, () => {
 onMounted(() => {
 	scene = new PoseScene(canvasEl.value)
 	scene.onModelLoad = renderFrame
+	auxViews.request = renderFrame
 	scene.setView(state.view)
 
 	resizeObserver = new ResizeObserver((entries) => {

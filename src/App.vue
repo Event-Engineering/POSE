@@ -5,13 +5,14 @@ import { loadFromUrl, startUrlSync, state } from './lib/state.js'
 import Sidebar from './components/Sidebar.vue'
 import Viewport from './components/Viewport.vue'
 import Readouts from './components/Readouts.vue'
+import ViewPanels from './components/ViewPanels.vue'
 
 loadFromUrl()
 startUrlSync()
 
 const views = [
 	{ key: 'camera', label: 'Camera' },
-	{ key: 'plan', label: 'Plan' },
+	{ key: 'top', label: 'Top' },
 	{ key: 'side', label: 'Side' },
 	{ key: 'orbit', label: 'Orbit' },
 ]
@@ -80,8 +81,11 @@ function copyImage() {
 				</div>
 			</header>
 			<main class="viewport-area">
-				<div class="viewport-wrap">
-					<Viewport ref="viewport" :export-mode="exportMode" />
+				<div class="viewport-row">
+					<div class="viewport-wrap">
+						<Viewport ref="viewport" :export-mode="exportMode" />
+					</div>
+					<ViewPanels />
 				</div>
 				<Readouts />
 			</main>
@@ -105,6 +109,7 @@ function copyImage() {
 }
 
 .app-header {
+	container-type: inline-size;
 	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
@@ -118,7 +123,7 @@ function copyImage() {
 }
 
 .header-side {
-	flex: 1 1 0;
+	flex: 1 0 auto;
 	display: flex;
 	align-items: center;
 	gap: 0.6em;
@@ -152,25 +157,40 @@ function copyImage() {
 	white-space: nowrap;
 }
 
-.seg-group button {
+/* One look for every header control: the view switcher, export select and tool buttons. */
+.seg-group button,
+.tool-btn,
+.export-select {
+	box-sizing: border-box;
+	height: 2.3em;
+	padding: 0 0.85em;
+	font: inherit;
+	font-size: 0.9em;
+	line-height: 1;
+	color: var(--text);
+	background: var(--panel-2, var(--panel));
 	white-space: nowrap;
+	cursor: pointer;
 }
 
 .tool-btn,
 .export-select {
-	background: var(--panel-2, var(--panel));
-	color: var(--text);
 	border: 1px solid var(--border);
 	border-radius: var(--radius, 6px);
-	padding: 0.35em 0.6em;
-	cursor: pointer;
-	font: inherit;
-	white-space: nowrap;
+}
+
+.seg-group button.active {
+	background: var(--accent);
+	color: #fff;
+}
+
+.seg-group button:not(.active):hover,
+.tool-btn:hover {
+	color: var(--accent);
 }
 
 .tool-btn:hover {
 	border-color: var(--accent);
-	color: var(--accent);
 }
 
 .sidebar {
@@ -194,8 +214,15 @@ function copyImage() {
 	overflow: hidden;
 }
 
+.viewport-row {
+	flex: 1 1 auto;
+	display: flex;
+	min-height: 0;
+}
+
 .viewport-wrap {
 	flex: 1 1 auto;
+	min-width: 0;
 	min-height: 0;
 	position: relative;
 }
@@ -212,5 +239,11 @@ function copyImage() {
 	width: 200px;
 	max-width: 100%;
 	height: auto;
+}
+/* Narrow header (e.g. with the desktop top/side panels open): drop the subtitle first. */
+@container (max-width: 980px) {
+	.subtitle {
+		display: none;
+	}
 }
 </style>

@@ -27,7 +27,7 @@ export const ENUMS = {
 	ar: ['3:2', '16:9', '4:3'],
 	or: ['land', 'port'],
 	crop: ['none', '1:1', '4:5', '3:4', '2:3', '9:16', '5:4', '4:3', '3:2', '16:9'],
-	view: ['camera', 'plan', 'side', 'orbit'],
+	view: ['camera', 'top', 'side', 'orbit'],
 	units: ['mm', 'ftin'],
 }
 
@@ -46,6 +46,8 @@ export const floorWidth = (s) => (s.fw == null ? s.bw : s.fw)
 
 function parse(key, raw) {
 	const def = DEFAULTS[key]
+	// 'plan' was the top view's old name; keep old links working.
+	if (key === 'view' && raw === 'plan') return 'top'
 	if (ENUMS[key]) return ENUMS[key].includes(raw) ? raw : undefined
 	if (key === 'po') return enabledPoses(raw).join(',')
 	if (key === 'bc' || key === 'fc' || key === 'mc') return /^[0-9a-f]{6}$/i.test(raw) ? '#' + raw : undefined

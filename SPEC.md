@@ -84,7 +84,7 @@ URL keys in brackets. Defaults shown.
 - Draw the true sensor frame as a solid red outline. Dim the overscan area slightly outside it.
 - If a post-crop is set, draw it as a second outline (dashed, different colour) inside the sensor frame, both visible together.
 
-### Plan view
+### Top view
 - Orthographic top-down view of the scene showing the backdrop, floor graphic, people, camera position and the horizontal frustum lines projected on the floor. Include a scale grid in the current units.
 
 ### Side view
@@ -93,7 +93,7 @@ URL keys in brackets. Defaults shown.
 ### Orbit view
 - Free orbit camera (OrbitControls) to look around the set, with a visible camera gizmo and frustum. A button snaps back to the camera view.
 
-Switch between views (Camera, Plan, Side, Orbit) with a button group. Nice to have: plan view as a small inset over the camera view.
+Switch between views (Camera, Top, Side, Orbit) with a button group. On desktop, live Top and Side views also sit in a resizable panel beside the main view.
 
 ## Readouts
 

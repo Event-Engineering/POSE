@@ -119,6 +119,9 @@ export class PoseScene {
 		this.sideCam.layers.enable(LAYER_HELPER)
 		this.sideCam.layers.enable(LAYER_SIDE)
 
+		// Copies of the top (plan) and side cameras for the desktop side panels (see renderAux).
+		this.auxCams = { top: this.planCam.clone(), side: this.sideCam.clone() }
+
 		this.orbitCam = new THREE.PerspectiveCamera(50, 1, 0.05, 60)
 		this.orbitCam.layers.enable(LAYER_HELPER)
 		this.orbitCam.layers.enable(LAYER_ORBIT)
@@ -258,14 +261,14 @@ export class PoseScene {
 		}
 
 		const size = Math.ceil(Math.max(state.cz + 2, state.bh + 1, state.ch + 1)) * 2
-		const grid = new THREE.GridHelper(size, size * 2, 0x888888, 0xa8a8a8)
+		const grid = new THREE.GridHelper(size, size * 2, 0x808080, 0xa0a0a0)
 		grid.rotation.z = Math.PI / 2
 		grid.position.set(reach, size / 2, size / 2 - 1)
 		grid.layers.set(LAYER_SIDE)
 		this.helperGroup.add(grid)
 	}
 
-	_fitSideCamera(state) {
+	_fitSideCamera(state, cam = this.sideCam, aspectRatio = this._viewportAspect || 1) {
 		const tallest = Math.max(state.bh, state.ch, ...(this._lastCrowd || []).map((p) => p.top ?? p.height))
 		const z0 = -0.6
 		const z1 = state.cz + 0.6
@@ -273,24 +276,25 @@ export class PoseScene {
 		const y1 = tallest + 0.5
 		const midZ = (z0 + z1) / 2
 		const midY = (y0 + y1) / 2
-		const aspectRatio = this._viewportAspect || 1
 		let halfW = (z1 - z0) / 2
 		let halfH = (y1 - y0) / 2
 		if (aspectRatio >= halfW / halfH) halfW = halfH * aspectRatio
 		else halfH = halfW / aspectRatio
-		this.sideCam.left = -halfW
-		this.sideCam.right = halfW
-		this.sideCam.top = halfH
-		this.sideCam.bottom = -halfH
-		this.sideCam.position.set(-20, midY, midZ)
-		this.sideCam.lookAt(0, midY, midZ)
-		this.sideCam.updateProjectionMatrix()
+		cam.left = -halfW
+		cam.right = halfW
+		cam.top = halfH
+		cam.bottom = -halfH
+		cam.position.set(-20, midY, midZ)
+		cam.lookAt(0, midY, midZ)
+		cam.updateProjectionMatrix()
 	}
 
 	_buildPlanHelpers(state) {
 		const fw = floorWidth(state)
-		const extent = Math.max(state.bw, fw, state.cz + 1) + 1
-		const grid = new THREE.GridHelper(extent * 2, Math.round(extent * 2 / 0.5), 0x999999, 0xbbbbbb)
+		// Whole-metre half-size with two divisions per metre gives exact 0.5 m squares, with lines
+		// through the origin (backdrop centre, wall line).
+		const extent = Math.ceil(Math.max(state.bw, fw, state.cz + 1) + 1)
+		const grid = new THREE.GridHelper(extent * 2, extent * 4, 0x808080, 0xa0a0a0)
 		grid.position.y = 0.003
 		grid.layers.set(LAYER_HELPER)
 		this.helperGroup.add(grid)
@@ -351,12 +355,11 @@ export class PoseScene {
 		this.helperGroup.add(body)
 	}
 
-	_fitPlanCamera(state) {
+	_fitPlanCamera(state, cam = this.planCam, aspectRatio = this._viewportAspect || 1) {
 		const fw = floorWidth(state)
 		const halfWidth = Math.max(state.bw, fw, state.cz * Math.tan(deg2rad(fovFromFocal(state.f, 'h', state.ar, state.or) / 2)) + 1) / 2 + 0.5
 		const depth = Math.max(state.fd, state.cz) + 1.5
 		const midZ = depth / 2 - 0.5
-		const aspectRatio = this._viewportAspect || 1
 		let halfW = halfWidth
 		let halfD = depth / 2
 		if (aspectRatio >= halfW / halfD) {
@@ -364,15 +367,15 @@ export class PoseScene {
 		} else {
 			halfD = halfW / aspectRatio
 		}
-		this.planCam.left = -halfW
-		this.planCam.right = halfW
-		this.planCam.top = halfD
-		this.planCam.bottom = -halfD
-		this.planCam.near = 0.1
-		this.planCam.far = 60
-		this.planCam.position.set(0, 20, midZ)
-		this.planCam.lookAt(0, 0, midZ)
-		this.planCam.updateProjectionMatrix()
+		cam.left = -halfW
+		cam.right = halfW
+		cam.top = halfD
+		cam.bottom = -halfD
+		cam.near = 0.1
+		cam.far = 60
+		cam.position.set(0, 20, midZ)
+		cam.lookAt(0, 0, midZ)
+		cam.updateProjectionMatrix()
 	}
 
 	setView(view) {
@@ -400,7 +403,7 @@ export class PoseScene {
 	}
 
 	_activeCamera() {
-		if (this.view === 'plan') return this.planCam
+		if (this.view === 'top') return this.planCam
 		if (this.view === 'side') return this.sideCam
 		if (this.view === 'orbit') return this.orbitCam
 		return this.cameraViewCam
@@ -409,6 +412,34 @@ export class PoseScene {
 	render() {
 		if (this.view === 'orbit') this.orbitControls.update()
 		this.renderer.render(this.scene, this._activeCamera())
+	}
+
+	/**
+	 * Render the plan or side view into `target`, a 2D canvas elsewhere on the page, using a
+	 * second small renderer so the main viewport is left untouched.
+	 */
+	renderAux(view, target) {
+		const state = this._lastState
+		const w = target.clientWidth
+		const h = target.clientHeight
+		if (!state || !w || !h) return
+		const dpr = Math.min(window.devicePixelRatio || 1, 2)
+		if (!this.auxRenderer) {
+			this.auxRenderer = new THREE.WebGLRenderer({ antialias: true })
+			this.auxRenderer.shadowMap.enabled = true
+			this.auxRenderer.shadowMap.type = THREE.PCFSoftShadowMap
+		}
+		this.auxRenderer.setPixelRatio(dpr)
+		this.auxRenderer.setSize(w, h, false)
+		const cam = this.auxCams[view]
+		if (view === 'top') this._fitPlanCamera(state, cam, w / h)
+		else this._fitSideCamera(state, cam, w / h)
+		for (const m of this._lineMaterials) m.resolution.set(w, h)
+		this.auxRenderer.render(this.scene, cam)
+		for (const m of this._lineMaterials) m.resolution.copy(this._resolution)
+		target.width = Math.round(w * dpr)
+		target.height = Math.round(h * dpr)
+		target.getContext('2d').drawImage(this.auxRenderer.domElement, 0, 0, target.width, target.height)
 	}
 
 	/** Render the camera view and return a PNG blob cropped to the requested region. */
@@ -468,5 +499,6 @@ export class PoseScene {
 		this._clearGroup(this.peopleGroup)
 		this._clearGroup(this.helperGroup)
 		this.renderer.dispose()
+		this.auxRenderer?.dispose()
 	}
 }

@@ -258,3 +258,9 @@ input[type='range']::-moz-range-thumb {
 	background: var(--border);
 	border-radius: 4px;
 }
+
+/* While dragging a panel edge (ViewPanels.vue): keep the resize cursor and stop text selection. */
+body.resizing-x {
+	cursor: col-resize;
+	user-select: none;
+}
