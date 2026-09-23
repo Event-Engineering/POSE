@@ -1,6 +1,6 @@
 // Deterministic crowd generation from a seeded PRNG.
 import { AVERAGE_HEIGHT } from './state.js'
-import { enabledPoses, poseMeta } from './poses.js'
+import { enabledPoses, poseMeta, YMCA, YMCA_META } from './poses.js'
 
 /** mulberry32 seeded PRNG. Returns a function that yields floats in [0, 1). */
 export function mulberry32(seed) {
@@ -70,7 +70,8 @@ export function generateCrowd(s) {
 	const pool = enabledPoses(s.po)
 
 	return heights.map((h, i) => {
-		const pose = pool[Math.floor(poseRng() * pool.length)]
+		// YMCA mode spells the letters in order; otherwise draw from the pool.
+		const pose = s.po === YMCA ? YMCA_META[i % YMCA_META.length].id : pool[Math.floor(poseRng() * pool.length)]
 		const meta = poseMeta(pose)
 		return {
 			x: xs[i],

@@ -3,6 +3,8 @@
 // ?glb=1                          POSES applied to the built src/assets/mannequin-ual.glb
 // ?sweep=1&clips=A,B&steps=6      every (or the listed) source clip sampled at `steps` times
 // ?axes=DEF-upper_arm.L           that bone rotated ±60° about x, y, z on top of Idle_Loop
+//   &base=A_TPose&deg=90           ...on top of another clip, by another angle
+// ?only=ymca-y,ymca-m              just these POSES
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { POSES, applyPose } from '../src/three/poses.js'
@@ -10,11 +12,18 @@ import { POSES, applyPose } from '../src/three/poses.js'
 const params = new URLSearchParams(location.search)
 const url = params.get('glb') ? '/src/assets/mannequin-ual.glb' : '/assets-src/ual/AnimationLibrary_Godot_Standard.gltf'
 const axes = params.get('axes')
+const base = params.get('base') || 'Idle_Loop'
+const deg = Number(params.get('deg') || 60)
+const only2 = params.get('only')?.split(',')
 const steps = Number(params.get('steps') || 4)
 const only = params.get('clips')?.split(',')
 
+// ?size=2 renders larger thumbnails.
+const k = Number(params.get('size') || 1)
+const W = 150 * k
+const H = 200 * k
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
-renderer.setSize(150, 200)
+renderer.setSize(W, H)
 const scene = new THREE.Scene()
 scene.background = new THREE.Color('#ddd')
 scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2))
@@ -34,8 +43,8 @@ function snap(label) {
 	renderer.render(scene, cam)
 	const fig = document.createElement('figure')
 	const c = document.createElement('canvas')
-	c.width = 150
-	c.height = 200
+	c.width = W
+	c.height = H
 	c.getContext('2d').drawImage(renderer.domElement, 0, 0)
 	const cap = document.createElement('figcaption')
 	cap.textContent = label
@@ -45,10 +54,10 @@ function snap(label) {
 
 if (axes) {
 	for (const [i, axis] of ['x', 'y', 'z'].entries()) {
-		for (const a of [-60, 60]) {
+		for (const a of [-deg, deg]) {
 			const r = [0, 0, 0]
 			r[i] = a
-			applyPose(model, gltf.animations, { clip: 'Idle_Loop', time: 0, bones: { [axes]: r } })
+			applyPose(model, gltf.animations, { clip: base, time: 0, bones: { [axes]: r } })
 			snap(`${axis} ${a}`)
 		}
 	}
@@ -67,12 +76,13 @@ if (axes) {
 	// Also measure each pose's extents relative to the standing height, for src/lib/pose-extents.js.
 	const box = new THREE.Box3()
 	const extents = {}
-	let standTop = 1
+	applyPose(model, gltf.animations, POSES[0])
+	let standTop = box.setFromObject(model, true).max.y
 	for (const pose of POSES) {
+		if (only2 && !only2.includes(pose.id)) continue
 		applyPose(model, gltf.animations, pose)
 		snap(pose.id)
 		box.setFromObject(model, true)
-		if (pose.id === 'stand') standTop = box.max.y
 		const r = (v) => Math.round((v / standTop) * 1000) / 1000
 		extents[pose.id] = { top: r(box.max.y), left: r(-box.min.x), right: r(box.max.x) }
 	}

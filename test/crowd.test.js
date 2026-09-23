@@ -149,3 +149,17 @@ describe('poses', () => {
 		expect(p.right - p.x).toBeGreaterThan(p.x - p.left + 0.3)
 	})
 })
+
+describe('YMCA easter egg', () => {
+	it('spells Y, M, C, A left to right', () => {
+		const crowd = generateCrowd({ ...DEFAULTS, n: 4, po: 'ymca' })
+		expect(crowd.map((p) => p.pose)).toEqual(['ymca-y', 'ymca-m', 'ymca-c', 'ymca-a'])
+	})
+
+	it('survives a URL round trip', async () => {
+		const { state, loadFromUrl, toQuery } = await import('../src/lib/state.js')
+		loadFromUrl('?po=ymca&n=4')
+		expect(state.po).toBe('ymca')
+		expect(toQuery()).toContain('po=ymca')
+	})
+})
