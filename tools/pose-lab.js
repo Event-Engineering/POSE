@@ -1,6 +1,6 @@
 // Dev-only: renders the UAL mannequin in candidate poses so photo poses can be picked by eye.
 // /tools/pose-lab.html            POSES applied to the source model
-// ?glb=1                          POSES applied to the built public/models/mannequin.glb
+// ?glb=1                          POSES applied to the built src/assets/mannequin.glb
 // ?sweep=1&clips=A,B&steps=6      every (or the listed) source clip sampled at `steps` times
 // ?axes=DEF-upper_arm.L           that bone rotated ±60° about x, y, z on top of Idle_Loop
 import * as THREE from 'three'
@@ -8,7 +8,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { POSES, applyPose } from '../src/three/poses.js'
 
 const params = new URLSearchParams(location.search)
-const url = params.get('glb') ? '/models/mannequin.glb' : '/assets-src/ual/AnimationLibrary_Godot_Standard.gltf'
+const url = params.get('glb') ? '/src/assets/mannequin.glb' : '/assets-src/ual/AnimationLibrary_Godot_Standard.gltf'
 const axes = params.get('axes')
 const steps = Number(params.get('steps') || 4)
 const only = params.get('clips')?.split(',')

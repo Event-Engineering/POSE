@@ -1,17 +1,17 @@
-// Loads the Quaternius UAL mannequin (public/models/mannequin.glb, CC0) and makes posed,
+// Loads the Quaternius UAL mannequin (src/assets/mannequin.glb, CC0) and makes posed,
 // tinted copies of it. See ASSETS.md and scripts/build-mannequin.mjs.
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { POSES, applyPose } from './poses.js'
-
-const URL = `${import.meta.env.BASE_URL}models/mannequin.glb`
+// Imported as a URL so Vite fingerprints it under /assets (cache-safe across rebuilds).
+import MODEL_URL from '../assets/mannequin.glb?url'
 
 let loading = null
 
 /** Resolves to { scene, animations, standTop } once, shared by all callers. */
 export function loadMannequin() {
-	loading ??= new GLTFLoader().loadAsync(URL).then((gltf) => {
+	loading ??= new GLTFLoader().loadAsync(MODEL_URL).then((gltf) => {
 		const template = gltf.scene
 		template.traverse((o) => {
 			if (o.isMesh) o.userData.sharedGeometry = true
