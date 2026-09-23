@@ -4,6 +4,7 @@ import { state } from '../lib/state.js'
 import { fovs } from '../lib/lens.js'
 import { generateCrowd } from '../lib/crowd.js'
 import { computeReadouts, marginStatus } from '../lib/readouts.js'
+import { highlight } from './highlight.js'
 import { formatLength, formatAngle } from '../lib/units.js'
 
 const STORAGE_KEY = 'pose.readoutsOpen'
@@ -88,21 +89,21 @@ const summary = computed(() => {
 			</button>
 		</div>
 		<div v-show="isOpen" class="drawer-body">
-			<div class="rcard">
+			<div class="rcard" :class="{ hot: highlight === 'spill' }" @mouseenter="highlight = 'spill'" @mouseleave="highlight = null">
 				<div class="rcard-title">Backdrop spill (sensor)</div>
 				<div class="rline"><span>Top</span><span :class="cls(readouts.sensor.spill.top)">{{ fmt(readouts.sensor.spill.top) }}</span></div>
 				<div class="rline"><span>Left</span><span :class="cls(readouts.sensor.spill.left)">{{ fmt(readouts.sensor.spill.left) }}</span></div>
 				<div class="rline"><span>Right</span><span :class="cls(readouts.sensor.spill.right)">{{ fmt(readouts.sensor.spill.right) }}</span></div>
 			</div>
 
-			<div class="rcard" v-if="readouts.crop">
+			<div class="rcard" v-if="readouts.crop" :class="{ hot: highlight === 'cropSpill' }" @mouseenter="highlight = 'cropSpill'" @mouseleave="highlight = null">
 				<div class="rcard-title">Backdrop spill (crop)</div>
 				<div class="rline"><span>Top</span><span :class="cls(readouts.crop.spill.top)">{{ fmt(readouts.crop.spill.top) }}</span></div>
 				<div class="rline"><span>Left</span><span :class="cls(readouts.crop.spill.left)">{{ fmt(readouts.crop.spill.left) }}</span></div>
 				<div class="rline"><span>Right</span><span :class="cls(readouts.crop.spill.right)">{{ fmt(readouts.crop.spill.right) }}</span></div>
 			</div>
 
-			<div class="rcard">
+			<div class="rcard" :class="{ hot: highlight === 'floor' }" @mouseenter="highlight = 'floor'" @mouseleave="highlight = null">
 				<div class="rcard-title">Floor</div>
 				<div class="rline"><span>Hits floor</span><span>{{ readouts.sensor.floor.hitsFloor ? 'Yes' : 'No' }}</span></div>
 				<div class="rline"><span>Reach</span><span>{{ readouts.sensor.floor.hitsFloor ? fmt(readouts.sensor.floor.farthestZ) : '—' }}</span></div>
@@ -113,7 +114,7 @@ const summary = computed(() => {
 				</div>
 			</div>
 
-			<div class="rcard">
+			<div class="rcard" :class="{ hot: highlight === 'coverage' }" @mouseenter="highlight = 'coverage'" @mouseleave="highlight = null">
 				<div class="rcard-title">Coverage at people</div>
 				<div class="rline"><span>Width</span><span>{{ fmt(readouts.coverage.width) }}</span></div>
 				<div class="rline"><span>Height</span><span>{{ fmt(readouts.coverage.height) }}</span></div>
@@ -125,14 +126,14 @@ const summary = computed(() => {
 				</div>
 			</div>
 
-			<div class="rcard">
+			<div class="rcard" :class="{ hot: highlight === 'headroom' }" @mouseenter="highlight = 'headroom'" @mouseleave="highlight = null">
 				<div class="rcard-title">Headroom &amp; clearance</div>
 				<div class="rline"><span>Headroom</span><span :class="cls(readouts.headroom)">{{ fmt(readouts.headroom) }}</span></div>
 				<div class="rline"><span>Clearance L</span><span :class="cls(readouts.sideClearance.left)">{{ fmt(readouts.sideClearance.left) }}</span></div>
 				<div class="rline"><span>Clearance R</span><span :class="cls(readouts.sideClearance.right)">{{ fmt(readouts.sideClearance.right) }}</span></div>
 			</div>
 
-			<div class="rcard">
+			<div class="rcard" :class="{ hot: highlight === 'footprint' }" @mouseenter="highlight = 'footprint'" @mouseleave="highlight = null">
 				<div class="rcard-title">Footprint</div>
 				<div class="rline"><span>Width</span><span>{{ fmt(readouts.footprint.width) }}</span></div>
 				<div class="rline"><span>Depth</span><span>{{ fmt(readouts.footprint.depth) }}</span></div>
@@ -246,5 +247,12 @@ const summary = computed(() => {
 	justify-content: space-between;
 	font-size: 0.85em;
 	padding: 0.15em 0;
+}
+.rcard {
+	transition: border-color 0.15s ease;
+}
+
+.rcard.hot {
+	border-color: var(--accent);
 }
 </style>

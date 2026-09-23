@@ -69,6 +69,9 @@ function computeSpillAndFloor(s, tanH, tanV) {
 		? Math.max(depthAt(lo), depthAt(hi)) * tanH
 		: Math.max(top ? top.halfWidth : 0, bottom ? bottom.halfWidth : 0)
 	const sideMargin = s.bw / 2 - maxHalfWidth
+	// Where each margin is measured on the wall, for drawing it (see lib/dimensions.js).
+	const sideAt = hi > lo ? (depthAt(lo) >= depthAt(hi) ? lo : hi) : Math.max(0, Math.min(s.bh, top ? top.y : 0))
+	const topAt = top ? top.y : null
 
 	const bottomFloor = floorAt(vBottom)
 	const topFloor = floorAt(vTop)
@@ -80,7 +83,7 @@ function computeSpillAndFloor(s, tanH, tanV) {
 	const widthAtReach = bottomFloor ? bottomFloor.t * tanH * 2 : null
 
 	return {
-		spill: { top: topMargin, left: sideMargin, right: sideMargin },
+		spill: { top: topMargin, left: sideMargin, right: sideMargin, sideAt, topAt, halfWidth: maxHalfWidth },
 		floor: {
 			hitsFloor,
 			nearestZ,
