@@ -1,7 +1,6 @@
 <script setup>
 import poweredBy from './assets/ee-powered-by.svg'
-import { ref } from 'vue'
-import { loadFromUrl, startUrlSync, state } from './lib/state.js'
+import { loadFromUrl, startUrlSync } from './lib/state.js'
 import Sidebar from './components/Sidebar.vue'
 import Viewport from './components/Viewport.vue'
 import Readouts from './components/Readouts.vue'
@@ -10,34 +9,8 @@ import ViewPanels from './components/ViewPanels.vue'
 loadFromUrl()
 startUrlSync()
 
-const views = [
-	{ key: 'camera', label: 'Camera' },
-	{ key: 'top', label: 'Top' },
-	{ key: 'side', label: 'Side' },
-	{ key: 'orbit', label: 'Orbit' },
-]
-
-const exportMode = ref('frame')
-const viewport = ref(null)
-
-function setView(v) {
-	state.view = v
-}
-
-function snapToCamera() {
-	viewport.value?.snapToCamera()
-}
-
 function copyLink() {
 	navigator.clipboard?.writeText(location.href).catch((err) => console.warn('POSE: copy link failed', err))
-}
-
-function savePng() {
-	viewport.value?.savePng()
-}
-
-function copyImage() {
-	viewport.value?.copyImage()
 }
 </script>
 
@@ -53,37 +26,19 @@ function copyImage() {
 		</aside>
 		<div class="main-column">
 			<header class="app-header">
-				<div class="header-side header-left">
-					<div class="btn-group seg-group">
-						<button
-							v-for="v in views"
-							:key="v.key"
-							type="button"
-							:class="{ active: state.view === v.key }"
-							@click="setView(v.key)"
-						>{{ v.label }}</button>
-					</div>
-					<button v-if="state.view === 'orbit'" type="button" class="tool-btn" @click="snapToCamera">Snap to camera</button>
-				</div>
+				<div class="header-side header-left"></div>
 				<div class="title-block">
 					<h1>POSE</h1>
 					<p class="subtitle">Photo Optics and Spatial Estimator</p>
 				</div>
 				<div class="header-side header-right">
 					<button type="button" class="tool-btn" @click="copyLink">Copy link</button>
-					<select v-model="exportMode" class="export-select">
-						<option value="frame">True frame</option>
-						<option value="crop">Crop</option>
-						<option value="overscan">Overscan</option>
-					</select>
-					<button type="button" class="tool-btn" @click="savePng">Save PNG</button>
-					<button type="button" class="tool-btn" @click="copyImage">Copy image</button>
 				</div>
 			</header>
 			<main class="viewport-area">
 				<div class="viewport-row">
 					<div class="viewport-wrap">
-						<Viewport ref="viewport" :export-mode="exportMode" />
+						<Viewport />
 					</div>
 					<ViewPanels />
 				</div>
@@ -157,10 +112,7 @@ function copyImage() {
 	white-space: nowrap;
 }
 
-/* One look for every header control: the view switcher, export select and tool buttons. */
-.seg-group button,
-.tool-btn,
-.export-select {
+.tool-btn {
 	box-sizing: border-box;
 	height: 2.3em;
 	padding: 0 0.85em;
@@ -169,28 +121,15 @@ function copyImage() {
 	line-height: 1;
 	color: var(--text);
 	background: var(--panel-2, var(--panel));
+	border: 1px solid var(--border);
+	border-radius: var(--radius, 6px);
 	white-space: nowrap;
 	cursor: pointer;
 }
 
-.tool-btn,
-.export-select {
-	border: 1px solid var(--border);
-	border-radius: var(--radius, 6px);
-}
-
-.seg-group button.active {
-	background: var(--accent);
-	color: #fff;
-}
-
-.seg-group button:not(.active):hover,
-.tool-btn:hover {
-	color: var(--accent);
-}
-
 .tool-btn:hover {
 	border-color: var(--accent);
+	color: var(--accent);
 }
 
 .sidebar {

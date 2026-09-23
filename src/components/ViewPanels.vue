@@ -1,16 +1,25 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { state } from '../lib/state.js'
 import { auxViews } from './aux-views.js'
+import { canvasToBlob, downloadBlob, copyBlob, imageName } from './image-export.js'
 
-// Desktop-only right-hand column with live top and side views. Clicking one opens it in the
-// main viewport.
+// Desktop-only right-hand column with live top and side views, each with its own save/copy.
+// They are independent of the main viewport's view.
 const panels = [
 	{ view: 'top', label: 'Top' },
 	{ view: 'side', label: 'Side' },
 ]
 const canvases = ref([])
 let observer
+
+// Each panel canvas already holds its latest render at device resolution.
+async function saveImage(view, i) {
+	downloadBlob(await canvasToBlob(canvases.value[i]), imageName(view))
+}
+
+async function copyImage(i) {
+	copyBlob(await canvasToBlob(canvases.value[i]))
+}
 
 // Width is draggable from the left edge and remembered per viewer (a convenience, not URL state).
 const MIN_WIDTH = 220
@@ -66,15 +75,14 @@ onBeforeUnmount(() => {
 <template>
 	<aside class="view-panels" :style="{ flexBasis: width + 'px' }">
 		<div class="drag-handle" :class="{ dragging }" role="separator" aria-orientation="vertical" aria-label="Resize top and side views" @pointerdown="startDrag"></div>
-		<button
-			v-for="(p, i) in panels" :key="p.view" type="button" class="view-panel"
-			:class="{ active: state.view === p.view }"
-			:title="`Open ${p.label.toLowerCase()} view`"
-			@click="state.view = p.view"
-		>
+		<div v-for="(p, i) in panels" :key="p.view" class="view-panel">
 			<span class="panel-label">{{ p.label }}</span>
+			<div class="float-bar panel-actions">
+				<button type="button" @click="saveImage(p.view, i)">Save</button>
+				<button type="button" @click="copyImage(i)">Copy</button>
+			</div>
 			<canvas :ref="(el) => (canvases[i] = el)" class="panel-canvas"></canvas>
-		</button>
+		</div>
 	</aside>
 </template>
 
@@ -116,12 +124,16 @@ onBeforeUnmount(() => {
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	background: var(--panel-2);
-	cursor: pointer;
 }
 
-.view-panel:hover,
-.view-panel.active {
-	border-color: var(--accent);
+.panel-actions {
+	top: 0.5em;
+	right: 0.5em;
+}
+
+.panel-actions button {
+	font-size: 0.75em;
+	padding: 0.3em 0.6em;
 }
 
 .panel-label {

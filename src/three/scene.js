@@ -8,7 +8,7 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { createMannequin } from './mannequin.js'
 import { loadMannequin, createPosedMannequin, mannequinMaterials } from './mannequin-model.js'
-import { aspect, halfTans, renderVerticalFov, overscanScale, cropFraction, fovFromFocal } from '../lib/lens.js'
+import { halfTans, renderFit, cropFraction, fovFromFocal } from '../lib/lens.js'
 import { floorWidth } from '../lib/state.js'
 
 const deg2rad = (d) => (d * Math.PI) / 180
@@ -26,6 +26,7 @@ const LAYER_SIDE = 4
 const CROP_COLOR = 0x0891b2
 
 const FRUSTUM_COLOR = 0x2266ee
+const TRANSITION_MS = 700
 const INFINITY_GREY = 0xd8d8d8
 const INFINITY_FLOOR_GREY = 0xcfcfcf
 
@@ -127,6 +128,9 @@ export class PoseScene {
 		this.orbitCam.layers.enable(LAYER_ORBIT)
 		this.orbitCam.position.set(3, 2.5, 5)
 
+		// Flies between views during a transition (see setView).
+		this.transitionCam = new THREE.PerspectiveCamera(50, 1, 0.05, 80)
+
 		this.orbitControls = new OrbitControls(this.orbitCam, this.canvas)
 		this.orbitControls.enableDamping = true
 		this.orbitControls.target.set(0, 1, 1.5)
@@ -218,7 +222,7 @@ export class PoseScene {
 		this.cameraViewCam.position.set(0, state.ch, state.cz)
 		this.cameraViewCam.rotation.set(0, 0, 0)
 		this.cameraViewCam.rotation.x = -deg2rad(state.ct)
-		this.cameraViewCam.fov = renderVerticalFov(state)
+		this.cameraViewCam.fov = renderFit(state, this._viewportAspect || 1).fov
 		this.cameraViewCam.updateProjectionMatrix()
 	}
 
@@ -379,12 +383,83 @@ export class PoseScene {
 	}
 
 	setView(view) {
+		if (view === this.view) return
+		// Glide from whatever is on screen now (mid-transition included) to the new view.
+		if (this.view && this._lastState) {
+			const from = this._anim ? this._anim.current : this._poseOf(this.view)
+			this._anim = { from, to: this._poseOf(view), start: performance.now(), current: from }
+			this.transitionCam.layers.mask = this._cameraFor(view).layers.mask
+		}
 		this.view = view
 		this.orbitControls.enabled = view === 'orbit'
 	}
 
-	snapToCamera() {
-		this.setView('camera')
+	/** Project a world point [x, y, z] to viewport CSS pixels with whatever camera is on screen. */
+	project([x, y, z], w, h) {
+		const cam = this._anim ? this.transitionCam : this._activeCamera()
+		const v = new THREE.Vector3(x, y, z).project(cam)
+		return { x: (v.x + 1) * 0.5 * w, y: (1 - v.y) * 0.5 * h, behind: v.z > 1 }
+	}
+
+	/** True while a view transition is playing; the owner should keep rendering frames. */
+	get animating() {
+		return !!this._anim
+	}
+
+	/**
+	 * A view's camera as a perspective-equivalent pose: the point it looks at, its orientation,
+	 * the height of world it frames at that point, and its FOV. The orthographic top and side
+	 * cameras sit 20 m from their look point, so a long lens at the same distance matches them
+	 * exactly (fog included) and the hand-off at the end of a transition is seamless.
+	 */
+	_poseOf(view) {
+		const cam = this._cameraFor(view)
+		cam.updateMatrixWorld()
+		const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion)
+		let dist
+		let fov
+		if (cam.isOrthographicCamera) {
+			dist = 20
+			fov = THREE.MathUtils.radToDeg(2 * Math.atan((cam.top - cam.bottom) / 2 / dist))
+		} else {
+			fov = cam.fov
+			dist = view === 'orbit'
+				? cam.position.distanceTo(this.orbitControls.target)
+				: Math.max(0.5, (this._lastState.cz - this._lastState.pz) / Math.cos(deg2rad(this._lastState.ct)))
+		}
+		const target = cam.position.clone().addScaledVector(forward, dist)
+		const height = 2 * dist * Math.tan(deg2rad(fov) / 2)
+		return { target, quat: cam.quaternion.clone(), height, fov }
+	}
+
+	_cameraFor(view) {
+		if (view === 'top') return this.planCam
+		if (view === 'side') return this.sideCam
+		if (view === 'orbit') return this.orbitCam
+		return this.cameraViewCam
+	}
+
+	/** Advance the transition and pose transitionCam; clears it once finished. */
+	_stepTransition() {
+		const a = this._anim
+		const t = Math.min(1, (performance.now() - a.start) / TRANSITION_MS)
+		const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+		const { from, to } = a
+		// Blend framing height and lens in log space so zooms feel even; derive distance from both.
+		const height = Math.exp(THREE.MathUtils.lerp(Math.log(from.height), Math.log(to.height), e))
+		const lt = (fov) => Math.log(Math.tan(deg2rad(fov) / 2))
+		const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.exp(THREE.MathUtils.lerp(lt(from.fov), lt(to.fov), e))))
+		const quat = from.quat.clone().slerp(to.quat, e)
+		const target = from.target.clone().lerp(to.target, e)
+		const dist = height / (2 * Math.tan(deg2rad(fov) / 2))
+		const cam = this.transitionCam
+		cam.quaternion.copy(quat)
+		cam.position.copy(target).addScaledVector(new THREE.Vector3(0, 0, -1).applyQuaternion(quat), -dist)
+		cam.fov = fov
+		cam.aspect = this._viewportAspect || 1
+		cam.updateProjectionMatrix()
+		a.current = { target, quat, height, fov }
+		if (t >= 1) this._anim = null
 	}
 
 	resize(w, h) {
@@ -397,19 +472,24 @@ export class PoseScene {
 		this.orbitCam.aspect = w / h
 		this.orbitCam.updateProjectionMatrix()
 		if (this._lastState) {
+			this._updateCameraView(this._lastState)
 			this._fitPlanCamera(this._lastState)
 			this._fitSideCamera(this._lastState)
 		}
 	}
 
 	_activeCamera() {
-		if (this.view === 'top') return this.planCam
-		if (this.view === 'side') return this.sideCam
-		if (this.view === 'orbit') return this.orbitCam
-		return this.cameraViewCam
+		return this._cameraFor(this.view)
 	}
 
 	render() {
+		if (this._anim) {
+			this._stepTransition()
+			if (this._anim) {
+				this.renderer.render(this.scene, this.transitionCam)
+				return
+			}
+		}
 		if (this.view === 'orbit') this.orbitControls.update()
 		this.renderer.render(this.scene, this._activeCamera())
 	}
@@ -442,54 +522,16 @@ export class PoseScene {
 		target.getContext('2d').drawImage(this.auxRenderer.domElement, 0, 0, target.width, target.height)
 	}
 
-	/** Render the camera view and return a PNG blob cropped to the requested region. */
-	async capture(mode = 'frame', overlay = null) {
-		const state = this._lastState
-		const prevView = this.view
-		this.view = 'camera'
-		this.renderer.render(this.scene, this.cameraViewCam)
-		this.view = prevView
-
+	/** Render the current view and return it as a PNG blob, with `overlay` (a 2D canvas) on top. */
+	async capture(overlay = null) {
+		this.render()
 		const source = this.renderer.domElement
-		const W = source.width
-		const H = source.height
-
-		if (mode === 'overscan' || !state) {
-			if (!overlay) return new Promise((resolve) => source.toBlob(resolve, 'image/png'))
-			// Composite the 2D overlay (dim, sensor frame, crop outline) over the full render.
-			const out = document.createElement('canvas')
-			out.width = W
-			out.height = H
-			const ctx = out.getContext('2d')
-			ctx.drawImage(source, 0, 0)
-			ctx.drawImage(overlay, 0, 0, W, H)
-			return new Promise((resolve) => out.toBlob(resolve, 'image/png'))
-		}
-
-		const frac = 1 / overscanScale(state)
-		let rw = W * frac
-		let rh = H * frac
-		let rx = (W - rw) / 2
-		let ry = (H - rh) / 2
-
-		if (mode === 'crop') {
-			const crop = cropFraction(state)
-			if (crop) {
-				const cw = rw * crop.w
-				const ch = rh * crop.h
-				rx = rx + (rw - cw) / 2
-				ry = ry + (rh - ch) / 2
-				rw = cw
-				rh = ch
-			}
-		}
-
 		const out = document.createElement('canvas')
-		out.width = Math.max(1, Math.round(rw))
-		out.height = Math.max(1, Math.round(rh))
+		out.width = source.width
+		out.height = source.height
 		const ctx = out.getContext('2d')
-		ctx.drawImage(source, rx, ry, rw, rh, 0, 0, out.width, out.height)
-
+		ctx.drawImage(source, 0, 0)
+		if (overlay) ctx.drawImage(overlay, 0, 0, out.width, out.height)
 		return new Promise((resolve) => out.toBlob(resolve, 'image/png'))
 	}
 

@@ -154,3 +154,22 @@ describe('cropFraction — new ratios', () => {
 		expect(c.h).toBeCloseTo((3 / 2) / (16 / 9), 9)
 	})
 })
+
+describe('renderFit', () => {
+	it('keeps at least 15% overscan on the tight axis and more on the loose one', async () => {
+		const { renderFit } = await import('../src/lib/lens.js')
+		const s = { f: 21.635, ar: '16:9', or: 'land', os: 15 }
+		// Viewport taller than the sensor: width is the tight axis.
+		const tall = renderFit(s, 4 / 3)
+		expect(tall.frame.w).toBeCloseTo(0.85, 9)
+		expect(tall.frame.h).toBeLessThan(0.85)
+		// Viewport wider than the sensor: height is the tight axis.
+		const wide = renderFit(s, 21 / 9)
+		expect(wide.frame.h).toBeCloseTo(0.85, 9)
+		expect(wide.frame.w).toBeLessThan(0.85)
+		// Matching aspect: 85% both ways.
+		const same = renderFit(s, 16 / 9)
+		expect(same.frame.w).toBeCloseTo(0.85, 9)
+		expect(same.frame.h).toBeCloseTo(0.85, 9)
+	})
+})

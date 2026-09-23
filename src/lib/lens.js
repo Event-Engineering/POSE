@@ -53,7 +53,17 @@ export function overscanScale(s) {
 	return 1 / (1 - s.os / 100)
 }
 
-/** Vertical FOV in degrees for the three.js render camera (overscan included). */
-export function renderVerticalFov(s) {
-	return deg(2 * Math.atan(halfTans(s.f, s.ar, s.or).v * overscanScale(s)))
+/**
+ * Fit the sensor frame inside a viewport of aspect `viewAspect` (width / height) with at least
+ * os% overscan on the tighter axis; the looser axis simply shows more of the scene.
+ * Returns the render camera's vertical FOV in degrees, and the frame's size as fractions
+ * {w, h} of the viewport.
+ */
+export function renderFit(s, viewAspect) {
+	const t = halfTans(s.f, s.ar, s.or)
+	const tv = Math.max(t.v, t.h / viewAspect) * overscanScale(s)
+	return {
+		fov: deg(2 * Math.atan(tv)),
+		frame: { w: t.h / (tv * viewAspect), h: t.v / tv },
+	}
 }

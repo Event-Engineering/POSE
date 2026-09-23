@@ -264,3 +264,40 @@ body.resizing-x {
 	cursor: col-resize;
 	user-select: none;
 }
+
+/* Floating control groups over a render (main viewport and the top/side panels). */
+.float-bar {
+	position: absolute;
+	z-index: 2;
+	display: flex;
+	gap: 0.4em;
+}
+
+.float-bar.btn-group {
+	gap: 0;
+}
+
+.float-bar button {
+	font-size: 0.85em;
+	padding: 0.45em 0.8em;
+	background: color-mix(in srgb, var(--panel) 82%, transparent);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.float-bar.btn-group button {
+	box-shadow: none;
+}
+
+.float-bar.btn-group {
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.float-bar button.active {
+	background: var(--accent);
+	color: #fff;
+}
+
+.float-tl { top: 0.75em; left: 0.75em; }
+.float-tr { top: 0.75em; right: 0.75em; }

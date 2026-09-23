@@ -22,7 +22,7 @@ This is deliberately not an optimiser. The answer is always a trade-off between 
 
 ## Layout
 
-A left sidebar with accordion sections, and the remainder of the window is the viewport. A small toolbar over the viewport holds the view switcher and export buttons. A readouts panel (bottom of sidebar or overlay in the viewport corner) shows the numbers listed under Readouts.
+A full-height left sidebar with accordion sections. To its right, a top bar (title centred, Copy link), then the viewport with floating view switcher and Save/Copy image buttons, an optional desktop panel of live Top and Side views, and a collapsible readouts drawer along the bottom holding the numbers listed under Readouts and the units toggle.
 
 ## Sidebar sections
 
@@ -80,7 +80,7 @@ URL keys in brackets. Defaults shown.
 ## Viewport
 
 ### Camera view (default)
-- Render with overscan: the three.js camera's FOV is widened so the true frame occupies about 85% of the viewport (overscan amount [os], fixed at 15%; no UI control, but `?os=` still overrides it in the URL). This shows what is just outside the shot.
+- The render always fills the viewport. The true frame is fitted inside it with at least 15% overscan on the tighter axis (overscan amount [os]; no UI control, but `?os=` still overrides it in the URL); the looser axis shows correspondingly more of the scene. This shows what is just outside the shot.
 - Draw the true sensor frame as a solid red outline. Dim the overscan area slightly outside it.
 - If a post-crop is set, draw it as a second outline (dashed, different colour) inside the sensor frame, both visible together.
 
@@ -91,13 +91,13 @@ URL keys in brackets. Defaults shown.
 - Orthographic side elevation (wall on the left, camera on the right) showing the frame's top and bottom edges and the optical axis out to where each meets the backdrop plane or floor, with the crop's edges when it trims height, over a 0.5 m grid. This is where camera height, tilt, headroom and backdrop-top spill are easiest to judge.
 
 ### Orbit view
-- Free orbit camera (OrbitControls) to look around the set, with a visible camera gizmo and frustum. A button snaps back to the camera view.
+- Free orbit camera (OrbitControls) to look around the set, with a visible camera gizmo and frustum.
 
-Switch between views (Camera, Top, Side, Orbit) with a button group. On desktop, live Top and Side views also sit in a resizable panel beside the main view.
+Switch between views (Camera, Top, Side, Orbit) with a button group floating over the render (the camera glides between viewpoints), with Save image and Copy image floating opposite it. On desktop, live Top and Side views also sit in a resizable panel beside the main view; they are independent of the main view's selection.
 
 ## Readouts
 
-Computed analytically from the frustum and the set, not from pixels:
+Computed analytically from the frustum and the set, not from pixels. Hovering a readout card draws its measurements as dimension lines over the main view, in whichever view is showing, coloured by status:
 
 - Backdrop spill warning: whether any edge of the frame sees past the top, left or right of the backdrop, with the margin remaining in mm per edge. Amber when the margin is under 100 mm, red when negative. When a crop is set, report the sensor frame and the crop separately, since guests may see the uncropped live feed on the booth screen.
 - Floor visibility: whether the bottom of the frame hits the floor, how far forward from the wall the visible floor reaches, and whether it extends beyond the floor graphic.
@@ -109,7 +109,7 @@ Computed analytically from the frustum and the set, not from pixels:
 
 - Every setting syncs to URL query parameters (short keys above) via `history.replaceState`, debounced. Loading a URL restores the full state including the crowd seed. This covers sharing with colleagues and A/B comparison by duplicating tabs.
 - Copy link button.
-- Save image: download the camera view as PNG. Offer a choice of true frame, cropped frame, or full overscan with overlays.
+- Save image: download the current view as PNG, exactly as rendered (the whole viewport, including overscan and the frame/crop overlays in camera view). The desktop Top and Side panels have their own save and copy.
 - Copy image to clipboard using `ClipboardItem` with `image/png`.
 - Enable `preserveDrawingBuffer` or render once into a separate canvas for capture.
 
