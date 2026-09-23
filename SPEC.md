@@ -58,7 +58,7 @@ URL keys in brackets. Defaults shown.
 - Height from floor [ch] 1.6 m, range 0.6–2.5 m.
 - Tilt [ct] 0°, range −10° to +30° (positive is down).
 - Distance from backdrop [cz] 2.4 m, range 0.5–8 m. Always measured from the wall, never from the people.
-- Post-crop [crop]: none, 1:1, 4:5, 4:3, 9:16. Always a centred crop.
+- Post-crop [crop]: none; square 1:1; portrait 4:5, 3:4, 2:3, 9:16; landscape 5:4, 4:3, 3:2, 16:9. Always a centred crop.
 - Roadmap: dropdown of cameras from a JSON list (ship a handful of generic samples only, not the real rental inventory).
 
 ## Crowd generation

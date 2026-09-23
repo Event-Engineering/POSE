@@ -134,3 +134,23 @@ describe('marginStatus', () => {
 		expect(marginStatus(0.2)).toBe('ok')
 	})
 })
+
+describe('cropFraction — new ratios', () => {
+	it('fits 3:4 and 5:4 inside a 16:9 landscape sensor', async () => {
+		const { cropFraction } = await import('../src/lib/lens.js')
+		const s = { ar: '16:9', or: 'land' }
+		const p = cropFraction({ ...s, crop: '3:4' })
+		expect(p.h).toBe(1)
+		expect(p.w).toBeCloseTo((3 / 4) / (16 / 9), 9)
+		const l = cropFraction({ ...s, crop: '5:4' })
+		expect(l.h).toBe(1)
+		expect(l.w).toBeCloseTo((5 / 4) / (16 / 9), 9)
+	})
+
+	it('trims height for 16:9 on a 3:2 sensor', async () => {
+		const { cropFraction } = await import('../src/lib/lens.js')
+		const c = cropFraction({ ar: '3:2', or: 'land', crop: '16:9' })
+		expect(c.w).toBe(1)
+		expect(c.h).toBeCloseTo((3 / 2) / (16 / 9), 9)
+	})
+})

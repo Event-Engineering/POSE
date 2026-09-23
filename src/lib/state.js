@@ -26,7 +26,7 @@ export const ENUMS = {
 	fovt: ['d', 'h', 'v'],
 	ar: ['3:2', '16:9', '4:3'],
 	or: ['land', 'port'],
-	crop: ['none', '1:1', '4:5', '4:3', '9:16'],
+	crop: ['none', '1:1', '4:5', '3:4', '2:3', '9:16', '5:4', '4:3', '3:2', '16:9'],
 	view: ['camera', 'plan', 'side', 'orbit'],
 	units: ['mm', 'ftin'],
 }

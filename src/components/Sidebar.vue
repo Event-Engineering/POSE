@@ -23,7 +23,12 @@ const fovtOptions = [
 	{ value: 'h', label: 'H' },
 	{ value: 'v', label: 'V' },
 ]
-const cropOptions = ['none', '1:1', '4:5', '4:3', '9:16']
+// Post-crops, grouped by the shape of the final image.
+const cropGroups = [
+	{ label: 'Square', options: ['1:1'] },
+	{ label: 'Portrait', options: ['4:5', '3:4', '2:3', '9:16'] },
+	{ label: 'Landscape', options: ['5:4', '4:3', '3:2', '16:9'] },
+]
 const hmOptions = [
 	{ value: 'avg', label: 'Average' },
 	{ value: 'mix', label: 'Mixed' },
@@ -149,7 +154,10 @@ function reseed() {
 			<div class="field-row">
 				<label class="slider-label">Post-crop</label>
 				<select v-model="state.crop">
-					<option v-for="c in cropOptions" :key="c" :value="c">{{ c === 'none' ? 'None' : c }}</option>
+					<option value="none">None</option>
+					<optgroup v-for="g in cropGroups" :key="g.label" :label="g.label">
+						<option v-for="c in g.options" :key="c" :value="c">{{ c }}</option>
+					</optgroup>
 				</select>
 			</div>
 		</Accordion>
