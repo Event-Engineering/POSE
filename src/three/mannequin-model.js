@@ -1,11 +1,11 @@
-// Loads the Quaternius UAL mannequin (src/assets/mannequin.glb, CC0) and makes posed,
+// Loads the Quaternius UAL mannequin (src/assets/mannequin-ual.glb, CC0) and makes posed,
 // tinted copies of it. See ASSETS.md and scripts/build-mannequin.mjs.
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { POSES, applyPose } from './poses.js'
 // Imported as a URL so Vite fingerprints it under /assets (cache-safe across rebuilds).
-import MODEL_URL from '../assets/mannequin.glb?url'
+import MODEL_URL from '../assets/mannequin-ual.glb?url'
 
 let loading = null
 

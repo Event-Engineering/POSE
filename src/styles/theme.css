@@ -2,7 +2,7 @@
 
 @font-face {
 	font-family: 'Oxanium';
-	src: url('../assets/fonts/oxanium.woff2') format('woff2');
+	src: url('../assets/fonts/oxanium-regular.woff2') format('woff2');
 	font-weight: 400 700;
 	font-display: swap;
 }

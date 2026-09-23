@@ -1,4 +1,4 @@
-// Builds src/assets/mannequin.glb from the Quaternius Universal Animation Library source
+// Builds src/assets/mannequin-ual.glb from the Quaternius Universal Animation Library source
 // (assets-src/ual, CC0): keeps the mesh, skin and only the clips that POSES reference.
 // Run with `npm run build:mannequin` after changing src/three/poses.js.
 import { NodeIO } from '@gltf-transform/core'
@@ -6,7 +6,7 @@ import { prune, dedup, weld, quantize } from '@gltf-transform/functions'
 
 const POSES_SRC = new URL('../src/three/poses.js', import.meta.url)
 const SOURCE = new URL('../assets-src/ual/AnimationLibrary_Godot_Standard.gltf', import.meta.url)
-const OUT = new URL('../src/assets/mannequin.glb', import.meta.url)
+const OUT = new URL('../src/assets/mannequin-ual.glb', import.meta.url)
 
 // poses.js imports three, so read the clip names from its source rather than importing it.
 const text = await (await import('node:fs/promises')).readFile(POSES_SRC, 'utf8')
